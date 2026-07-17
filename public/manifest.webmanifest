@@ -1,0 +1,18 @@
+{
+  "name": "Альфа.Будущее: Первый бизнес",
+  "short_name": "Альфа.Будущее",
+  "description": "AI-кофаундер от идеи до первых платежей",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F4F5",
+  "theme_color": "#EF3124",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
