@@ -85,7 +85,7 @@ function ProfileContent() {
   }, [achievements]);
 
   return (
-    <div className="grid lg:grid-cols-[1fr_340px] gap-6">
+    <div className="space-y-6">
       <div className="space-y-5">
         {/* Profile hero */}
         <motion.div

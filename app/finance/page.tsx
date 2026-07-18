@@ -123,7 +123,7 @@ function FinanceContent() {
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-[360px_1fr] gap-6">
+      <div className="space-y-6">
         {/* Input */}
         <div className="space-y-4">
           <Card className="p-5">
