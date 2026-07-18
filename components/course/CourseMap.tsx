@@ -60,19 +60,29 @@ export function CourseMap({ modules, progress }: CourseMapProps) {
               allSkipped={allSkipped}
               isCurrent={isCurrent}
             />
-            <div className="space-y-3 mt-3">
-              {stageModules.map((module) => {
-                const status = progress[module.id]?.status ?? "locked";
-                const isActive = module.id === activeId;
-                return (
-                  <CourseNode
-                    key={module.id}
-                    ref={isActive ? activeRef : undefined}
-                    module={module}
-                    status={status}
-                  />
-                );
-              })}
+
+            {/* Узлы стадии с пунктирной линией-таймлайном */}
+            <div className="relative mt-4">
+              {stageModules.length > 1 && (
+                <span
+                  aria-hidden
+                  className="absolute left-[27px] top-8 bottom-8 border-l-2 border-dashed border-bg-muted"
+                />
+              )}
+              <div className="space-y-4">
+                {stageModules.map((module) => {
+                  const status = progress[module.id]?.status ?? "locked";
+                  const isActive = module.id === activeId;
+                  return (
+                    <CourseNode
+                      key={module.id}
+                      ref={isActive ? activeRef : undefined}
+                      module={module}
+                      status={status}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </section>
         );
@@ -103,9 +113,9 @@ function StageHeader({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-2xl p-3 border",
+        "flex items-center gap-3 rounded-2xl p-3.5 border",
         isCurrent
-          ? "border-primary/30 bg-primary-soft/50"
+          ? "border-primary/30 bg-gradient-to-r from-primary-soft to-bg-surface"
           : allSkipped
             ? "border-bg-muted bg-bg-muted/30"
             : "border-bg-muted bg-bg-surface",
@@ -113,14 +123,14 @@ function StageHeader({
     >
       <div
         className={cn(
-          "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0",
+          "w-10 h-10 rounded-2xl flex items-center justify-center font-bold shrink-0",
           allSkipped ? "bg-bg-muted text-secondary" : "bg-ink text-white",
         )}
       >
         {index + 1}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={cn("text-sm font-semibold leading-tight", allSkipped ? "text-secondary" : "text-ink")}>
+        <p className={cn("text-sm font-bold leading-tight", allSkipped ? "text-secondary" : "text-ink")}>
           {title}
         </p>
         <p className="text-xs text-secondary truncate">{subtitle}</p>
@@ -130,8 +140,8 @@ function StageHeader({
       ) : (
         <span
           className={cn(
-            "chip text-[10px] shrink-0",
-            isCurrent ? "bg-primary text-white" : "bg-bg-muted text-secondary",
+            "chip text-[10px] shrink-0 font-semibold",
+            isCurrent ? "bg-primary text-white" : done === total ? "bg-success/10 text-success" : "bg-bg-muted text-secondary",
           )}
         >
           {done}/{total}
@@ -155,13 +165,11 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
   const completed = status === "completed" || status === "credited_by_diagnostic";
   const active = status === "in_progress" || status === "available";
 
-  const nodeBg = locked
-    ? "bg-bg-muted text-secondary"
-    : skipped
-      ? "bg-bg-muted text-secondary"
-      : completed
-        ? "bg-success text-white"
-        : "bg-primary text-white";
+  const nodeBg = completed
+    ? "bg-success text-white"
+    : active
+      ? "bg-primary text-white"
+      : "bg-bg-muted text-secondary";
 
   const cardBg = active
     ? "bg-bg-surface border-primary shadow-glow"
@@ -170,10 +178,12 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
       : "bg-bg-surface border-bg-muted";
 
   const content = (
-    <div className="flex items-start gap-3">
-      <div
+    <div className="relative flex items-start gap-4">
+      {/* Узел-кружок */}
+      <motion.div
+        whileTap={locked ? undefined : { scale: 0.92 }}
         className={cn(
-          "relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-card font-bold",
+          "relative w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-card border-4 border-bg-surface z-10 font-bold",
           nodeBg,
           skipped && "opacity-70",
         )}
@@ -183,16 +193,23 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
         ) : completed ? (
           <Check className="w-6 h-6" strokeWidth={3} />
         ) : (
-          <span className="text-sm">{module.number}</span>
+          <span className="text-base">{module.number}</span>
         )}
         {active && (
-          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-warning border-2 border-bg-surface flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-warning border-2 border-bg-surface flex items-center justify-center">
             <Zap className="w-2.5 h-2.5 text-white" fill="white" />
           </span>
         )}
-      </div>
+      </motion.div>
 
-      <div className={cn("flex-1 min-w-0 rounded-2xl border-2 p-3.5 transition-all", cardBg, (locked || skipped) && "opacity-75")}>
+      {/* Карточка */}
+      <div
+        className={cn(
+          "flex-1 min-w-0 rounded-2xl border-2 p-4 transition-all",
+          cardBg,
+          (locked || skipped) && "opacity-75",
+        )}
+      >
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           {skipped && (
             <span className="chip text-[10px] bg-bg-muted text-secondary">не требуется на вашей стадии</span>
@@ -207,11 +224,11 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
         <h3 className={cn("font-semibold leading-tight", locked ? "text-secondary" : "text-ink")}>
           {module.title}
         </h3>
-        <p className={cn("text-sm mt-0.5 line-clamp-2", locked ? "text-secondary/70" : "text-secondary")}>
+        <p className={cn("text-sm mt-1 line-clamp-2", locked ? "text-secondary/70" : "text-secondary")}>
           {module.description}
         </p>
-        <div className="flex items-center gap-3 mt-2 text-xs text-secondary">
-          <span>⏱ {module.estimatedMinutes} мин</span>
+        <div className="flex items-center gap-3 mt-3 text-xs">
+          <span className="text-secondary">⏱ {module.estimatedMinutes} мин</span>
           {module.milestone && !locked && !skipped && (
             <span className="text-primary font-medium">
               {module.milestone.emoji} {module.milestone.label}
@@ -241,16 +258,19 @@ export { CourseNode };
 
 function FinalNode() {
   return (
-    <Link href="/demo-day" className="flex items-start gap-3 group">
-      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-hover text-white flex items-center justify-center shrink-0 shadow-glow">
+    <Link href="/demo-day" className="relative flex items-start gap-4 group">
+      <motion.div
+        whileHover={{ scale: 1.04 }}
+        className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-hover text-white flex items-center justify-center shrink-0 shadow-glow border-4 border-bg-surface z-10"
+      >
         <Trophy className="w-6 h-6" />
-      </div>
-      <div className="flex-1 rounded-2xl border-2 border-primary p-3.5 bg-gradient-to-br from-primary-soft to-bg-surface">
+      </motion.div>
+      <div className="flex-1 rounded-2xl border-2 border-primary p-4 bg-gradient-to-br from-primary-soft to-bg-surface">
         <span className="chip text-[10px] bg-primary text-white mb-1">
           <Sparkles className="w-3 h-3" /> Финал
         </span>
         <h3 className="font-semibold text-ink leading-tight">Demo Day</h3>
-        <p className="text-sm text-secondary mt-0.5">Соберите метрики, сформируйте pitch и презентуйте проект</p>
+        <p className="text-sm text-secondary mt-1">Соберите метрики, сформируйте pitch и презентуйте проект</p>
       </div>
     </Link>
   );

@@ -42,6 +42,7 @@ function HomeContent() {
   const metrics = useAppStore((s) => s.metrics);
   const streak = useAppStore((s) => s.streakDays);
   const moduleProgress = useAppStore((s) => s.moduleProgress);
+  const achievements = useAppStore((s) => s.achievements);
 
   const track = profile?.track ?? null;
   const modules = useMemo(() => getModulesForTrack(track), [track]);
@@ -64,7 +65,7 @@ function HomeContent() {
     }) ?? modules.find((m) => moduleProgress[m.id]?.status === "locked");
 
   return (
-    <div className="space-y-5 lg:space-y-6">
+    <div className="space-y-5">
       {/* Hero */}
       <HeroCard
         projectName={project?.name ?? "Мой проект"}
@@ -82,7 +83,7 @@ function HomeContent() {
       {/* Metrics */}
       <section>
         <SectionHeader title="Результаты" subtitle="Метрики вашего бизнеса" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <MetricCard icon={Users} label="Интервью" value={formatNumber(metrics.interviews)} tone="dark" />
           <MetricCard icon={MousePointerClick} label="Заявки" value={formatNumber(metrics.leads)} tone="warning" />
           <MetricCard icon={CreditCard} label="Оплаты" value={formatNumber(metrics.payments)} tone="primary" />
@@ -101,36 +102,38 @@ function HomeContent() {
         />
       )}
 
-      {/* Journey + боковая колонка (на ПК — рядом, на мобиле — стопкой) */}
-      <div className="grid lg:grid-cols-[1fr_360px] gap-5 lg:gap-6 items-start">
-        <section>
-          <SectionHeader
-            title="Ваша траектория"
-            subtitle={
-              track === "tech"
-                ? "Трек «Технологический стартап»"
-                : track === "regular"
-                  ? "Трек «Реальный бизнес»"
-                  : "От идеи до первого платежа"
-            }
-          />
-          <div className="card p-4 lg:p-6">
-            <CourseMap modules={modules} progress={moduleProgress} />
-          </div>
-        </section>
+      {/* Разделы */}
+      <section>
+        <SectionHeader title="Разделы" subtitle="Всё под рукой" />
+        <div className="grid grid-cols-3 gap-3">
+          <QuickTile href="/business" icon={Briefcase} label="Мой бизнес" />
+          <QuickTile href="/finance" icon={Calculator} label="Экономика" />
+          <QuickTile href="/demo-day" icon={Trophy} label="Demo Day" />
+        </div>
+      </section>
 
-        <aside className="space-y-5 lg:space-y-6 lg:sticky lg:top-6">
-          <div>
-            <SectionHeader title="Разделы" subtitle="Всё под рукой" />
-            <div className="grid grid-cols-3 gap-3">
-              <QuickTile href="/business" icon={Briefcase} label="Мой бизнес" />
-              <QuickTile href="/finance" icon={Calculator} label="Экономика" />
-              <QuickTile href="/demo-day" icon={Trophy} label="Demo Day" />
-            </div>
-          </div>
-          <AiPromoCard />
-        </aside>
-      </div>
+      {/* Достижения */}
+      <AchievementsStrip achievements={achievements} />
+
+      {/* AI-кофаундер */}
+      <AiPromoCard />
+
+      {/* Траектория */}
+      <section>
+        <SectionHeader
+          title="Ваша траектория"
+          subtitle={
+            track === "tech"
+              ? "Трек «Технологический стартап»"
+              : track === "regular"
+                ? "Трек «Реальный бизнес»"
+                : "От идеи до первого платежа"
+          }
+        />
+        <div className="card p-4 sm:p-5">
+          <CourseMap modules={modules} progress={moduleProgress} />
+        </div>
+      </section>
     </div>
   );
 }
@@ -283,6 +286,37 @@ function NextActionCard({
         </div>
       </motion.div>
     </Link>
+  );
+}
+
+function AchievementsStrip({
+  achievements,
+}: {
+  achievements: { id: string; label: string; emoji: string; unlocked: boolean }[];
+}) {
+  if (!achievements || achievements.length === 0) return null;
+  const unlocked = achievements.filter((a) => a.unlocked).length;
+  return (
+    <section>
+      <SectionHeader title="Достижения" subtitle={`Открыто ${unlocked} из ${achievements.length}`} />
+      <div className="card p-4">
+        <div className="grid grid-cols-6 gap-2.5">
+          {achievements.slice(0, 12).map((a) => (
+            <div
+              key={a.id}
+              title={a.label}
+              className={
+                a.unlocked
+                  ? "aspect-square rounded-2xl bg-primary-soft flex items-center justify-center text-xl"
+                  : "aspect-square rounded-2xl bg-bg-muted/70 flex items-center justify-center text-xl grayscale opacity-45"
+              }
+            >
+              {a.unlocked ? a.emoji : "🔒"}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
