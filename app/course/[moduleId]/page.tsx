@@ -74,6 +74,8 @@ function ModuleContent() {
   const profile = useAppStore((s) => s.profile);
   const project = useAppStore((s) => s.project);
   const metrics = useAppStore((s) => s.metrics);
+  const projectBrief = useAppStore((s) => s.projectBrief);
+  const projectFiles = useAppStore((s) => s.projectFiles);
 
   const [step, setStep] = useState<Step>("Урок");
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -398,7 +400,11 @@ function ModuleContent() {
       <CoachSheet
         open={coachOpen}
         onClose={() => setCoachOpen(false)}
-        system={lessonSystemPrompt(buildBusinessContext(profile, project, metrics), mod, answers)}
+        system={lessonSystemPrompt(
+          buildBusinessContext(profile, project, metrics, { brief: projectBrief, files: projectFiles }),
+          mod,
+          answers,
+        )}
         greeting={`Привет! Я на связи по блоку «${mod.title}». Спросите что угодно — помогу разобраться и применить к вашему бизнесу.`}
         suggestions={[
           "Объясни простыми словами",

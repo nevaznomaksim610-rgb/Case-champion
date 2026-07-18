@@ -32,7 +32,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ content: "Некорректный запрос.", error: "bad_request" }, { status: 400 });
   }
 
-  const system = typeof body.system === "string" ? body.system.slice(0, 8000) : "";
+  // Большой лимит — чтобы в системный промпт помещались материалы проекта.
+  const system = typeof body.system === "string" ? body.system.slice(0, 24000) : "";
   const history: Msg[] = (Array.isArray(body.messages) ? body.messages : [])
     .filter(
       (m): m is Msg =>

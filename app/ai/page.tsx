@@ -27,6 +27,8 @@ function AIContent() {
   const profile = useAppStore((s) => s.profile);
   const project = useAppStore((s) => s.project);
   const metrics = useAppStore((s) => s.metrics);
+  const projectBrief = useAppStore((s) => s.projectBrief);
+  const projectFiles = useAppStore((s) => s.projectFiles);
 
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -77,7 +79,9 @@ function AIContent() {
       history[history.length - 1] = { role: "user", content: modelPrompt };
     }
 
-    const system = baseSystemPrompt(buildBusinessContext(profile, project, metrics));
+    const system = baseSystemPrompt(
+      buildBusinessContext(profile, project, metrics, { brief: projectBrief, files: projectFiles }),
+    );
     const content = await askAi(history, system);
 
     addChatMessage({

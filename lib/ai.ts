@@ -16,13 +16,23 @@ const TRACK_LABEL: Record<string, string> = {
   regular: "реальный (обычный) бизнес — повторяемые продажи продукта или услуги",
 };
 
-// Собираем портрет бизнеса пользователя из данных онбординга/проекта/метрик.
+export interface ProjectMaterials {
+  brief?: string;
+  files?: { name: string; text: string }[];
+}
+
+// Собираем портрет бизнеса пользователя из данных онбординга/проекта/метрик
+// и дополнительных материалов (описание + распарсенная презентация/документы).
 export function buildBusinessContext(
   profile: UserProfile | null,
   project: ProjectInfo | null,
   metrics: DashboardMetrics | null,
+  materials?: ProjectMaterials,
 ): string {
-  if (!profile && !project) return "Пользователь ещё не заполнил профиль своего бизнеса.";
+  const hasMaterials = !!(materials?.brief?.trim() || (materials?.files && materials.files.length > 0));
+  if (!profile && !project && !hasMaterials) {
+    return "Пользователь ещё не заполнил профиль своего бизнеса.";
+  }
   const lines: string[] = [];
 
   if (profile?.name) lines.push(`Основатель: ${profile.name}${profile.age ? `, ${profile.age} лет` : ""}.`);
@@ -45,6 +55,25 @@ export function buildBusinessContext(
     if (metrics.revenue) met.push(`выручка: ${metrics.revenue.toLocaleString("ru-RU")} ₽`);
     if (metrics.averageCheck) met.push(`средний чек: ${metrics.averageCheck.toLocaleString("ru-RU")} ₽`);
     if (met.length) lines.push(`Текущие метрики — ${met.join(", ")}.`);
+  }
+
+  // Дополнительные материалы от пользователя (описание + презентация/документы).
+  if (materials) {
+    const extra: string[] = [];
+    if (materials.brief?.trim()) {
+      extra.push(`Описание проекта от пользователя:\n${materials.brief.trim()}`);
+    }
+    if (materials.files && materials.files.length > 0) {
+      for (const f of materials.files) {
+        if (f.text?.trim()) extra.push(`Материал «${f.name}»:\n${f.text.trim()}`);
+      }
+    }
+    if (extra.length > 0) {
+      // Ограничиваем общий объём материалов, чтобы не раздувать промпт.
+      let block = extra.join("\n\n");
+      if (block.length > 9000) block = block.slice(0, 9000) + "\n…(материалы обрезаны)";
+      lines.push("\n=== ЗАГРУЖЕННЫЕ МАТЕРИАЛЫ ПРОЕКТА ===\n" + block);
+    }
   }
 
   return lines.join("\n");

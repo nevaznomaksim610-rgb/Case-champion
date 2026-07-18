@@ -106,6 +106,9 @@ interface AppState {
   // user & project
   profile: UserProfile | null;
   project: ProjectInfo | null;
+  // Дополнительные материалы проекта от пользователя (для контекста AI)
+  projectBrief: string;
+  projectFiles: { name: string; text: string }[];
   metrics: DashboardMetrics;
 
   // course
@@ -136,6 +139,9 @@ interface AppState {
   // ===== actions =====
   setProfile: (p: Partial<UserProfile>) => void;
   setProject: (p: Partial<ProjectInfo>) => void;
+  setProjectBrief: (text: string) => void;
+  addProjectFile: (file: { name: string; text: string }) => void;
+  removeProjectFile: (name: string) => void;
   setMetrics: (m: Partial<DashboardMetrics>) => void;
   completeOnboarding: () => void;
   loadDemo: () => void;
@@ -196,6 +202,8 @@ export const useAppStore = create<AppState>()(
 
       profile: null,
       project: null,
+      projectBrief: "",
+      projectFiles: [],
       metrics: { interviews: 0, visits: 0, leads: 0, payments: 0, revenue: 0, averageCheck: 0, cac: 0 },
 
       moduleProgress: initialProgressMap(),
@@ -222,6 +230,14 @@ export const useAppStore = create<AppState>()(
 
       setProject: (p) =>
         set((s) => ({ project: { ...(s.project ?? ({} as ProjectInfo)), ...p } as ProjectInfo })),
+
+      setProjectBrief: (text) => set({ projectBrief: text }),
+      addProjectFile: (file) =>
+        set((s) => ({
+          projectFiles: [...s.projectFiles.filter((f) => f.name !== file.name), file],
+        })),
+      removeProjectFile: (name) =>
+        set((s) => ({ projectFiles: s.projectFiles.filter((f) => f.name !== name) })),
 
       setMetrics: (m) => set((s) => ({ metrics: { ...s.metrics, ...m } })),
 
@@ -287,6 +303,8 @@ export const useAppStore = create<AppState>()(
           onboarded: false,
           profile: null,
           project: null,
+          projectBrief: "",
+          projectFiles: [],
           metrics: { interviews: 0, visits: 0, leads: 0, payments: 0, revenue: 0, averageCheck: 0, cac: 0 },
           moduleProgress: fresh,
           streakDays: 0,

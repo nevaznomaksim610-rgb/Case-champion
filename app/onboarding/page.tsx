@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,13 +15,24 @@ import {
   Check,
   Cpu,
   Store,
+  FileText,
+  UploadCloud,
+  Loader2,
+  FileCheck2,
+  X,
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, Select } from "@/components/ui/Field";
+import { Input, Label, Select, Textarea } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
 import type { BusinessFormat, Goal30, Stage, Track } from "@/types";
 import { analyzeOnboarding } from "@/lib/onboarding";
+import { extractTextFromFile, ACCEPTED_UPLOAD } from "@/lib/parseFile";
+
+interface UploadedFile {
+  name: string;
+  text: string;
+}
 
 type Kind = "startup" | "business";
 
@@ -32,7 +43,8 @@ const STEPS = [
   { id: 3, title: "Сфера", icon: Store },
   { id: 4, title: "Ресурсы", icon: Wallet },
   { id: 5, title: "Цель", icon: Target },
-  { id: 6, title: "Итог", icon: Sparkles },
+  { id: 6, title: "Материалы", icon: FileText },
+  { id: 7, title: "Итог", icon: Sparkles },
 ];
 
 const STAGE_OPTIONS: { value: Stage; label: string; desc: string; emoji: string }[] = [
@@ -64,6 +76,8 @@ export default function OnboardingPage() {
   const router = useRouter();
   const setProfile = useAppStore((s) => s.setProfile);
   const setProject = useAppStore((s) => s.setProject);
+  const setProjectBrief = useAppStore((s) => s.setProjectBrief);
+  const addProjectFile = useAppStore((s) => s.addProjectFile);
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
 
   const [step, setStep] = useState(0);
@@ -78,6 +92,8 @@ export default function OnboardingPage() {
     teamSize: "" as string | number,
     skills: [] as string[],
     goal: null as Goal30 | null,
+    brief: "",
+    files: [] as UploadedFile[],
   });
 
   const setField = <K extends keyof typeof data>(key: K, value: (typeof data)[K]) =>
@@ -145,6 +161,10 @@ export default function OnboardingPage() {
       industry: FORMAT_OPTIONS.find((f) => f.value === data.format)?.label ?? "Другое",
       goal: GOAL_OPTIONS.find((g) => g.value === data.goal)?.label ?? "",
     });
+
+    // Материалы проекта → в контекст AI-кофаундера.
+    setProjectBrief(data.brief.trim());
+    data.files.forEach((f) => addProjectFile(f));
 
     // Старт с чистого листа — ничего в траектории не пройдено.
     completeOnboarding();
@@ -380,7 +400,17 @@ export default function OnboardingPage() {
                 </StepShell>
               )}
 
-              {step === 6 && <SummaryStep data={data} />}
+              {step === 6 && (
+                <MaterialsStep
+                  brief={data.brief}
+                  onBrief={(v) => setField("brief", v)}
+                  files={data.files}
+                  onAddFile={(f) => setData((d) => ({ ...d, files: [...d.files.filter((x) => x.name !== f.name), f] }))}
+                  onRemoveFile={(name) => setData((d) => ({ ...d, files: d.files.filter((x) => x.name !== name) }))}
+                />
+              )}
+
+              {step === 7 && <SummaryStep data={data} />}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -525,6 +555,128 @@ function OptionCard({
   );
 }
 
+function MaterialsStep({
+  brief,
+  onBrief,
+  files,
+  onAddFile,
+  onRemoveFile,
+}: {
+  brief: string;
+  onBrief: (v: string) => void;
+  files: UploadedFile[];
+  onAddFile: (f: UploadedFile) => void;
+  onRemoveFile: (name: string) => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (list: FileList | null) => {
+    if (!list) return;
+    setError(null);
+    for (const file of Array.from(list)) {
+      if (file.size > 15 * 1024 * 1024) {
+        setError(`«${file.name}» больше 15 МБ — слишком большой.`);
+        continue;
+      }
+      setBusy(file.name);
+      try {
+        const text = await extractTextFromFile(file);
+        if (!text.trim()) setError(`В «${file.name}» не нашлось текста.`);
+        else onAddFile({ name: file.name, text });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : `Не удалось разобрать «${file.name}».`);
+      } finally {
+        setBusy(null);
+      }
+    }
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <StepShell
+      icon={<FileText className="w-6 h-6" />}
+      title="Данные и презентация проекта"
+      subtitle="Необязательно, но так AI-кофаундер узнает ваш проект глубже"
+    >
+      <Label>Расскажите о проекте своими словами</Label>
+      <Textarea
+        value={brief}
+        onChange={(e) => onBrief(e.target.value)}
+        placeholder="Что за продукт, для кого, чем отличаетесь, какие цифры уже есть, что сейчас беспокоит…"
+        rows={5}
+      />
+
+      <div className="mt-5">
+        <Label>Презентация или документы</Label>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          accept={ACCEPTED_UPLOAD}
+          onChange={(e) => handleFiles(e.target.files)}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy !== null}
+          className="w-full flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-bg-muted hover:border-primary/50 bg-bg-surface py-6 px-4 text-center transition-colors disabled:opacity-70"
+        >
+          {busy ? (
+            <>
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <span className="text-sm text-secondary">Разбираю «{busy}»…</span>
+            </>
+          ) : (
+            <>
+              <span className="w-11 h-11 rounded-2xl bg-primary-soft text-primary flex items-center justify-center">
+                <UploadCloud className="w-5 h-5" />
+              </span>
+              <span className="text-sm font-medium text-ink">Загрузить файлы</span>
+              <span className="text-xs text-secondary">PPTX, PDF, DOCX, TXT · до 15 МБ</span>
+            </>
+          )}
+        </button>
+
+        {error && <p className="err mt-2">{error}</p>}
+
+        {files.length > 0 && (
+          <div className="space-y-2 mt-3">
+            {files.map((f) => (
+              <div
+                key={f.name}
+                className="flex items-center gap-3 rounded-2xl border border-bg-muted bg-bg-surface p-3"
+              >
+                <FileCheck2 className="w-5 h-5 text-success shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-ink truncate">{f.name}</p>
+                  <p className="text-xs text-secondary">
+                    {f.text.length.toLocaleString("ru-RU")} символов извлечено
+                  </p>
+                </div>
+                <button
+                  onClick={() => onRemoveFile(f.name)}
+                  aria-label="Убрать"
+                  className="w-8 h-8 rounded-full hover:bg-bg-muted flex items-center justify-center text-secondary shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="text-xs text-secondary mt-4 bg-bg-muted/60 rounded-2xl p-3">
+        Данные хранятся на вашем устройстве. При вопросе к AI мы передаём их вместе с запросом, чтобы
+        ответы были точными под ваш проект.
+      </p>
+    </StepShell>
+  );
+}
+
 function SummaryStep({ data }: { data: Record<string, unknown> }) {
   const track: Track = data.kind === "startup" ? "tech" : "regular";
   const rec = analyzeOnboarding({
@@ -541,6 +693,10 @@ function SummaryStep({ data }: { data: Record<string, unknown> }) {
     tech: "Технологический стартап",
     regular: "Реальный бизнес",
   };
+
+  const materialsCount =
+    (Array.isArray(data.files) ? data.files.length : 0) +
+    ((data.brief as string)?.trim() ? 1 : 0);
 
   return (
     <div>
@@ -562,6 +718,13 @@ function SummaryStep({ data }: { data: Record<string, unknown> }) {
         <SummaryRow label="Трек развития" value={trackName[track]} emoji={track === "tech" ? "💻" : "🛍️"} />
         <SummaryRow label="Стартовая стадия" value={rec.stageTitle} emoji="🎯" />
         <SummaryRow label="Первый блок" value={rec.startModuleLabel} emoji="🚀" />
+        {materialsCount > 0 && (
+          <SummaryRow
+            label="Материалы для AI"
+            value={`Загружено: ${materialsCount} — кофаундер учтёт`}
+            emoji="📎"
+          />
+        )}
       </div>
 
       <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-2">Первые шаги</p>
