@@ -32,6 +32,8 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppStore } from "@/store/useAppStore";
 import { getModuleById, ALL_MODULES } from "@/data/courseData";
 import { analyzeModule } from "@/lib/aiEngine";
+import { buildBusinessContext, lessonSystemPrompt } from "@/lib/ai";
+import { CoachSheet } from "@/components/ai/CoachSheet";
 import { cn } from "@/lib/utils";
 import type { FormFieldDef, AIInsight } from "@/types";
 
@@ -64,6 +66,7 @@ function ModuleContent() {
   const pushToast = useAppStore((s) => s.pushToast);
   const profile = useAppStore((s) => s.profile);
   const project = useAppStore((s) => s.project);
+  const metrics = useAppStore((s) => s.metrics);
 
   const [step, setStep] = useState<Step>("Урок");
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -71,6 +74,7 @@ function ModuleContent() {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
 
   // Init
   useEffect(() => {
@@ -163,7 +167,28 @@ function ModuleContent() {
           </div>
           <h1 className="text-xl font-bold text-ink leading-tight truncate">{mod.title}</h1>
         </div>
+        <button
+          onClick={() => setCoachOpen(true)}
+          aria-label="Спросить AI по уроку"
+          className="w-10 h-10 rounded-full bg-primary-soft text-primary hover:bg-primary hover:text-white flex items-center justify-center shrink-0 transition-colors"
+        >
+          <Sparkles className="w-5 h-5" />
+        </button>
       </div>
+
+      {/* Постоянная подсказка: AI доступен на каждом уроке */}
+      <button
+        onClick={() => setCoachOpen(true)}
+        className="w-full mb-5 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary-soft/50 px-4 py-3 text-left hover:bg-primary-soft transition-colors"
+      >
+        <span className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
+          <Sparkles className="w-4 h-4" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-ink leading-tight">Спросить AI-кофаундера</span>
+          <span className="block text-xs text-secondary truncate">Объяснит урок и подскажет под ваш бизнес</span>
+        </span>
+      </button>
 
       {/* Stepper */}
       <div className="card p-4 mb-5">
@@ -342,6 +367,19 @@ function ModuleContent() {
             : "Блок будет отмечен завершённым."
         }
         confirmLabel="Завершить"
+      />
+
+      <CoachSheet
+        open={coachOpen}
+        onClose={() => setCoachOpen(false)}
+        system={lessonSystemPrompt(buildBusinessContext(profile, project, metrics), mod, answers)}
+        greeting={`Привет! Я на связи по блоку «${mod.title}». Спросите что угодно — помогу разобраться и применить к вашему бизнесу.`}
+        suggestions={[
+          "Объясни простыми словами",
+          "Приведи пример под мой бизнес",
+          "Проверь мои ответы",
+          "С чего начать?",
+        ]}
       />
     </div>
   );

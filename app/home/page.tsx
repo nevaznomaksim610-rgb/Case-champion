@@ -15,6 +15,7 @@ import {
   Target,
   Calculator,
   Briefcase,
+  Trophy,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/shell/AppShell";
@@ -59,7 +60,7 @@ function HomeContent() {
     }) ?? modules.find((m) => moduleProgress[m.id]?.status === "locked");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 lg:space-y-6">
       {/* Hero */}
       <HeroCard
         projectName={project?.name ?? "Мой проект"}
@@ -77,7 +78,7 @@ function HomeContent() {
       {/* Metrics */}
       <section>
         <SectionHeader title="Результаты" subtitle="Метрики вашего бизнеса" />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard icon={Users} label="Интервью" value={formatNumber(metrics.interviews)} tone="dark" />
           <MetricCard icon={MousePointerClick} label="Заявки" value={formatNumber(metrics.leads)} tone="warning" />
           <MetricCard icon={CreditCard} label="Оплаты" value={formatNumber(metrics.payments)} tone="primary" />
@@ -96,31 +97,58 @@ function HomeContent() {
         />
       )}
 
-      {/* Quick access — остальные разделы как drill-down в рамках одной вкладки */}
-      <section>
-        <div className="grid grid-cols-3 gap-3">
-          <QuickTile href="/business" icon={Briefcase} label="Мой бизнес" />
-          <QuickTile href="/finance" icon={Calculator} label="Экономика" />
-          <QuickTile href="/ai" icon={Sparkles} label="AI-кофаундер" accent />
-        </div>
-      </section>
+      {/* Journey + боковая колонка (на ПК — рядом, на мобиле — стопкой) */}
+      <div className="grid lg:grid-cols-[1fr_360px] gap-5 lg:gap-6 items-start">
+        <section>
+          <SectionHeader
+            title="Ваша траектория"
+            subtitle={
+              track === "tech"
+                ? "Трек «Технологический стартап»"
+                : track === "regular"
+                  ? "Трек «Реальный бизнес»"
+                  : "От идеи до первого платежа"
+            }
+          />
+          <div className="card p-4 lg:p-6">
+            <CourseMap modules={modules} progress={moduleProgress} />
+          </div>
+        </section>
 
-      {/* Journey */}
-      <section>
-        <SectionHeader
-          title="Ваша траектория"
-          subtitle={
-            track === "tech"
-              ? "Трек «Технологический стартап»"
-              : track === "regular"
-                ? "Трек «Реальный бизнес»"
-                : "От идеи до первого платежа"
-          }
-        />
-        <div className="card p-4">
-          <CourseMap modules={modules} progress={moduleProgress} />
+        <aside className="space-y-5 lg:space-y-6 lg:sticky lg:top-6">
+          <div>
+            <SectionHeader title="Разделы" subtitle="Всё под рукой" />
+            <div className="grid grid-cols-3 gap-3">
+              <QuickTile href="/business" icon={Briefcase} label="Мой бизнес" />
+              <QuickTile href="/finance" icon={Calculator} label="Экономика" />
+              <QuickTile href="/demo-day" icon={Trophy} label="Demo Day" />
+            </div>
+          </div>
+          <AiPromoCard />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function AiPromoCard() {
+  const router = useRouter();
+  return (
+    <div className="relative overflow-hidden rounded-3xl bg-ink text-white p-5">
+      <div className="absolute -top-16 -right-10 w-44 h-44 rounded-full bg-primary/30 blur-2xl" />
+      <div className="relative">
+        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center mb-3">
+          <Sparkles className="w-5 h-5" />
         </div>
-      </section>
+        <p className="font-semibold text-white">AI-кофаундер</p>
+        <p className="text-sm text-white/70 mt-1">
+          Знает всё о вашем бизнесе из онбординга и ответит на любой вопрос — по идее, офферу, экономике и платежам.
+        </p>
+        <Button size="sm" fullWidth className="mt-4" onClick={() => router.push("/ai")}>
+          <Sparkles className="w-4 h-4" />
+          Открыть чат
+        </Button>
+      </div>
     </div>
   );
 }
@@ -268,7 +296,7 @@ function QuickTile({
   return (
     <Link
       href={href}
-      className="card p-3 flex flex-col items-center justify-center gap-2 text-center hover:border-primary/40 transition-colors"
+      className="card p-3 flex flex-col items-center justify-center gap-2 text-center hover:border-primary/40 hover:shadow-card hover:-translate-y-0.5 transition-all"
     >
       <div
         className={

@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAppStore } from "@/store/useAppStore";
-import { chatReply, QUICK_ACTIONS } from "@/lib/aiEngine";
+import { QUICK_ACTIONS } from "@/lib/aiEngine";
+import { askAi, baseSystemPrompt, buildBusinessContext, type ChatTurn } from "@/lib/ai";
 import { uid, cn } from "@/lib/utils";
 
 export default function AIPage() {
@@ -25,6 +26,7 @@ function AIContent() {
   const clearChat = useAppStore((s) => s.clearChat);
   const profile = useAppStore((s) => s.profile);
   const project = useAppStore((s) => s.project);
+  const metrics = useAppStore((s) => s.metrics);
 
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -54,41 +56,48 @@ function AIContent() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [chat, typing]);
 
-  const send = (text?: string, actionId?: string | null) => {
-    const userText = (text ?? input).trim();
-    if (!userText && !actionId) return;
-
-    if (userText) {
-      addChatMessage({
-        id: uid("msg_"),
-        role: "user",
-        content: userText,
-        createdAt: new Date().toISOString(),
-      });
-    }
-    setInput("");
-    setTyping(true);
-
-    setTimeout(() => {
-      const reply = chatReply(actionId ?? null, userText, { project, profile });
-      addChatMessage(reply);
-      setTyping(false);
-    }, 700 + Math.random() * 400);
-  };
-
-  const onQuick = (id: string, label: string) => {
+  // Единый вызов реального AI (DeepSeek через серверный маршрут) с контекстом бизнеса.
+  const runAssistant = async (displayText: string, modelPrompt: string) => {
     addChatMessage({
       id: uid("msg_"),
       role: "user",
-      content: label,
+      content: displayText,
       createdAt: new Date().toISOString(),
     });
+    setInput("");
     setTyping(true);
-    setTimeout(() => {
-      const reply = chatReply(id, "", { project, profile });
-      addChatMessage(reply);
-      setTyping(false);
-    }, 700);
+
+    // История берётся из стора уже вместе с только что добавленным сообщением.
+    const history: ChatTurn[] = useAppStore
+      .getState()
+      .chat.filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
+    // Если для быстрого действия display и промпт различаются — подменяем последний ход.
+    if (modelPrompt !== displayText && history.length > 0) {
+      history[history.length - 1] = { role: "user", content: modelPrompt };
+    }
+
+    const system = baseSystemPrompt(buildBusinessContext(profile, project, metrics));
+    const content = await askAi(history, system);
+
+    addChatMessage({
+      id: uid("msg_"),
+      role: "assistant",
+      content,
+      createdAt: new Date().toISOString(),
+    });
+    setTyping(false);
+  };
+
+  const send = (text?: string) => {
+    const userText = (text ?? input).trim();
+    if (!userText || typing) return;
+    void runAssistant(userText, userText);
+  };
+
+  const onQuick = (label: string, prompt: string) => {
+    if (typing) return;
+    void runAssistant(label, prompt);
   };
 
   const copyText = (id: string, text: string) => {
@@ -98,7 +107,7 @@ function AIContent() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-124px)]">
+    <div className="flex flex-col h-[calc(100dvh-124px)] lg:h-[calc(100dvh-15rem)] max-w-[880px] w-full mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -129,7 +138,7 @@ function AIContent() {
         {QUICK_ACTIONS.map((qa) => (
           <button
             key={qa.id}
-            onClick={() => onQuick(qa.id, `${qa.icon} ${qa.label}`)}
+            onClick={() => onQuick(`${qa.icon} ${qa.label}`, qa.label)}
             className="chip bg-bg-surface border border-bg-muted text-ink whitespace-nowrap shrink-0 hover:border-primary hover:text-primary transition-colors"
           >
             <span>{qa.icon}</span>

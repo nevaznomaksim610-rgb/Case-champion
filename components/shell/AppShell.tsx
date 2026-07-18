@@ -50,12 +50,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#E6E6E9] flex justify-center">
-      {/* Единая вкладка: один центрированный экран, встраивается в Альфа-Бизнес */}
-      <div className="relative w-full max-w-[480px] bg-bg min-h-[100dvh] flex flex-col shadow-[0_0_60px_-18px_rgba(11,11,11,0.28)]">
+    <div className="min-h-[100dvh] bg-[#E6E6E9] lg:bg-gradient-to-b lg:from-[#ECECEF] lg:to-[#DDDDE2] flex justify-center lg:py-8 lg:px-6">
+      {/* Единая вкладка: узкая колонка на мобиле (встраивается в Альфа-Бизнес),
+          широкое «окно-приложение» на ПК */}
+      <div className="relative w-full max-w-[480px] lg:max-w-[1120px] bg-bg min-h-[100dvh] lg:min-h-[calc(100dvh-4rem)] flex flex-col shadow-[0_0_60px_-18px_rgba(11,11,11,0.28)] lg:rounded-[32px] lg:border lg:border-black/[0.05] lg:shadow-[0_40px_100px_-45px_rgba(11,11,11,0.5)]">
         {!isCourse && (
-          <header className="sticky top-0 z-30 bg-bg-surface/90 backdrop-blur-md border-b border-bg-muted">
-            <div className="h-[60px] px-4 flex items-center justify-between gap-3">
+          <header className="sticky top-0 lg:static z-30 bg-bg-surface/90 backdrop-blur-md border-b border-bg-muted lg:rounded-t-[32px]">
+            <div className="h-[60px] lg:h-[76px] px-4 lg:px-8 flex items-center justify-between gap-3">
               {isHome ? (
                 <>
                   <Link href="/home" className="flex items-center gap-2.5 min-w-0">
@@ -94,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
         )}
 
-        <main className="flex-1 w-full px-4 pt-4 pb-10">
+        <main className="flex-1 w-full px-4 pt-4 pb-10 lg:px-8 lg:pt-7 lg:pb-14">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
