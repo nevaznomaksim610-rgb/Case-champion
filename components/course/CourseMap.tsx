@@ -3,8 +3,9 @@
 import { forwardRef, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Check, Lock, Star, Zap, Trophy, Sparkles } from "lucide-react";
+import { Check, Lock, Zap, Trophy, Sparkles } from "lucide-react";
 import type { Module, ModuleProgress, ModuleStatus } from "@/types";
+import { COURSE_STAGES, moduleStageIndex, type CourseStageIndex } from "@/data/courseData";
 import { cn } from "@/lib/utils";
 
 interface CourseMapProps {
@@ -13,25 +14,18 @@ interface CourseMapProps {
   milestones?: { id: string; label: string; emoji: string; moduleId: string }[];
 }
 
-const STATUS_LABELS: Record<ModuleStatus, string> = {
-  locked: "Закрыто",
-  available: "Доступно",
-  in_progress: "В работе",
-  completed: "Завершено",
-  credited_by_diagnostic: "Зачтено диагностикой",
-  skipped_not_applicable: "Не применимо",
-};
+function isDone(s?: ModuleStatus): boolean {
+  return s === "completed" || s === "credited_by_diagnostic";
+}
 
-export function CourseMap({ modules, progress, milestones = [] }: CourseMapProps) {
+export function CourseMap({ modules, progress }: CourseMapProps) {
   const activeRef = useRef<HTMLAnchorElement>(null);
 
-  // Найти активный узел
   const activeId = modules.find((m) => {
     const s = progress[m.id]?.status;
     return s === "in_progress" || s === "available";
   })?.id;
 
-  // Плавный скролл к активному узлу
   useEffect(() => {
     if (activeRef.current) {
       const t = setTimeout(() => {
@@ -41,49 +35,108 @@ export function CourseMap({ modules, progress, milestones = [] }: CourseMapProps
     }
   }, [activeId]);
 
+  const activeStage = activeId !== undefined ? moduleStageIndex(activeId) : null;
+
   return (
-    <div className="relative">
-      {/* Извилистая вертикальная линия — фоновая */}
-      <svg
-        className="absolute left-[34px] top-4 bottom-4 w-[24px] pointer-events-none"
-        preserveAspectRatio="none"
-        viewBox="0 0 24 1000"
-        fill="none"
-        aria-hidden
-      >
-        <path
-          d="M12 0 Q 22 80, 12 160 Q 2 240, 12 320 Q 22 400, 12 480 Q 2 560, 12 640 Q 22 720, 12 800 Q 2 880, 12 1000"
-          stroke="#E8E8EA"
-          strokeWidth="3"
-          strokeDasharray="6 8"
-          strokeLinecap="round"
-        />
-      </svg>
+    <div className="space-y-6">
+      {COURSE_STAGES.map((stage) => {
+        const stageModules = modules.filter((m) => moduleStageIndex(m.id) === stage.index);
+        if (stageModules.length === 0) return null;
 
-      <div className="space-y-5">
-        {modules.map((module, idx) => {
-          const status = progress[module.id]?.status ?? "locked";
-          const milestone = milestones.find((m) => m.moduleId === module.id);
-          const isActive = module.id === activeId;
-          const align = idx % 2 === 0 ? "left" : "right";
+        const allSkipped = stageModules.every(
+          (m) => progress[m.id]?.status === "skipped_not_applicable",
+        );
+        const doneCount = stageModules.filter((m) => isDone(progress[m.id]?.status)).length;
+        const isCurrent = activeStage === stage.index;
 
-          return (
-            <div key={module.id}>
-              <CourseNode
-                ref={isActive ? activeRef : undefined}
-                module={module}
-                status={status}
-                align={align}
-                index={idx + 1}
-              />
-              {milestone && <MilestoneNode milestone={milestone} />}
+        return (
+          <section key={stage.index}>
+            <StageHeader
+              index={stage.index}
+              title={stage.title}
+              subtitle={stage.subtitle}
+              done={doneCount}
+              total={stageModules.length}
+              allSkipped={allSkipped}
+              isCurrent={isCurrent}
+            />
+            <div className="space-y-3 mt-3">
+              {stageModules.map((module) => {
+                const status = progress[module.id]?.status ?? "locked";
+                const isActive = module.id === activeId;
+                return (
+                  <CourseNode
+                    key={module.id}
+                    ref={isActive ? activeRef : undefined}
+                    module={module}
+                    status={status}
+                  />
+                );
+              })}
             </div>
-          );
-        })}
+          </section>
+        );
+      })}
 
-        {/* Финальный узел Demo Day */}
-        <FinalNode />
+      <FinalNode />
+    </div>
+  );
+}
+
+function StageHeader({
+  index,
+  title,
+  subtitle,
+  done,
+  total,
+  allSkipped,
+  isCurrent,
+}: {
+  index: CourseStageIndex;
+  title: string;
+  subtitle: string;
+  done: number;
+  total: number;
+  allSkipped: boolean;
+  isCurrent: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-2xl p-3 border",
+        isCurrent
+          ? "border-primary/30 bg-primary-soft/50"
+          : allSkipped
+            ? "border-bg-muted bg-bg-muted/30"
+            : "border-bg-muted bg-bg-surface",
+      )}
+    >
+      <div
+        className={cn(
+          "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0",
+          allSkipped ? "bg-bg-muted text-secondary" : "bg-ink text-white",
+        )}
+      >
+        {index + 1}
       </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn("text-sm font-semibold leading-tight", allSkipped ? "text-secondary" : "text-ink")}>
+          {title}
+        </p>
+        <p className="text-xs text-secondary truncate">{subtitle}</p>
+      </div>
+      {allSkipped ? (
+        <span className="chip bg-bg-muted text-secondary text-[10px] shrink-0">не требуется</span>
+      ) : (
+        <span
+          className={cn(
+            "chip text-[10px] shrink-0",
+            isCurrent ? "bg-primary text-white" : "bg-bg-muted text-secondary",
+          )}
+        >
+          {done}/{total}
+        </span>
+      )}
     </div>
   );
 }
@@ -91,114 +144,85 @@ export function CourseMap({ modules, progress, milestones = [] }: CourseMapProps
 interface CourseNodeProps {
   module: Module;
   status: ModuleStatus;
-  align: "left" | "right";
-  index: number;
 }
 
 const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function CourseNodeImpl(
-  { module, status, index },
+  { module, status },
   ref,
 ) {
   const locked = status === "locked";
+  const skipped = status === "skipped_not_applicable";
   const completed = status === "completed" || status === "credited_by_diagnostic";
   const active = status === "in_progress" || status === "available";
 
   const nodeBg = locked
     ? "bg-bg-muted text-secondary"
-    : completed
-      ? "bg-success text-white"
-      : "bg-primary text-white";
+    : skipped
+      ? "bg-bg-muted text-secondary"
+      : completed
+        ? "bg-success text-white"
+        : "bg-primary text-white";
 
-  const cardBg = locked
-    ? "bg-bg-surface/60 border-bg-muted"
+  const cardBg = active
+    ? "bg-bg-surface border-primary shadow-glow"
     : completed
-      ? "bg-bg-surface border-success/20"
-      : active
-        ? "bg-bg-surface border-primary shadow-glow"
-        : "bg-bg-surface border-bg-muted";
+      ? "bg-bg-surface border-success/30"
+      : "bg-bg-surface border-bg-muted";
 
   const content = (
-    <>
-      <div className="flex items-start gap-4">
-        {/* Узел-кружок */}
-        <motion.div
-          whileTap={locked ? undefined : { scale: 0.92 }}
-          className={cn(
-            "relative w-[68px] h-[68px] rounded-full flex flex-col items-center justify-center shrink-0 shadow-card border-4 border-bg z-10",
-            nodeBg,
-          )}
-        >
-          {locked ? (
-            <Lock className="w-6 h-6" />
-          ) : completed ? (
-            <Check className="w-7 h-7" strokeWidth={3} />
-          ) : (
-            <>
-              <span className="text-xs font-bold opacity-80 leading-none">
-                {module.number}
-              </span>
-              <span className="text-lg font-bold leading-none mt-0.5">{index}</span>
-            </>
-          )}
-          {active && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-warning border-2 border-bg flex items-center justify-center">
-              <Zap className="w-2.5 h-2.5 text-white" fill="white" />
-            </span>
-          )}
-        </motion.div>
+    <div className="flex items-start gap-3">
+      <div
+        className={cn(
+          "relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-card font-bold",
+          nodeBg,
+          skipped && "opacity-70",
+        )}
+      >
+        {locked ? (
+          <Lock className="w-5 h-5" />
+        ) : completed ? (
+          <Check className="w-6 h-6" strokeWidth={3} />
+        ) : (
+          <span className="text-sm">{module.number}</span>
+        )}
+        {active && (
+          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-warning border-2 border-bg-surface flex items-center justify-center">
+            <Zap className="w-2.5 h-2.5 text-white" fill="white" />
+          </span>
+        )}
+      </div>
 
-        {/* Карточка */}
-        <div className={cn("flex-1 min-w-0 card border-2 p-4 transition-all", cardBg)}>
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className={cn(
-                "chip text-[10px]",
-                locked
-                  ? "bg-bg-muted text-secondary"
-                  : status === "credited_by_diagnostic"
-                    ? "bg-warning/15 text-warning"
-                    : completed
-                      ? "bg-success/10 text-success"
-                      : "bg-primary-soft text-primary",
-              )}
-            >
-              {module.track === "tech" && "💻 "}
-              {module.track === "regular" && "🛍️ "}
-              {module.number}
-              {module.track !== "common" && (module.track === "tech" ? "С" : "Б")}
+      <div className={cn("flex-1 min-w-0 rounded-2xl border-2 p-3.5 transition-all", cardBg, (locked || skipped) && "opacity-75")}>
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          {skipped && (
+            <span className="chip text-[10px] bg-bg-muted text-secondary">не требуется на вашей стадии</span>
+          )}
+          {active && <span className="chip text-[10px] bg-primary-soft text-primary">сейчас</span>}
+          {completed && (
+            <span className="chip text-[10px] bg-success/10 text-success">
+              <Check className="w-3 h-3" /> готово
             </span>
-            {status === "credited_by_diagnostic" && (
-              <span className="chip text-[10px] bg-warning/15 text-warning">
-                <Star className="w-3 h-3" /> Диагностика
-              </span>
-            )}
-          </div>
-          <h3 className={cn("font-semibold leading-tight", locked ? "text-secondary" : "text-ink")}>
-            {module.title}
-          </h3>
-          <p className={cn("text-sm mt-1 line-clamp-2", locked ? "text-secondary/70" : "text-secondary")}>
-            {module.description}
-          </p>
-          <div className="flex items-center gap-3 mt-3 text-xs">
-            <span className={cn("flex items-center gap-1", locked ? "text-secondary/60" : "text-secondary")}>
-              ⏱ {module.estimatedMinutes} мин
+          )}
+        </div>
+        <h3 className={cn("font-semibold leading-tight", locked ? "text-secondary" : "text-ink")}>
+          {module.title}
+        </h3>
+        <p className={cn("text-sm mt-0.5 line-clamp-2", locked ? "text-secondary/70" : "text-secondary")}>
+          {module.description}
+        </p>
+        <div className="flex items-center gap-3 mt-2 text-xs text-secondary">
+          <span>⏱ {module.estimatedMinutes} мин</span>
+          {module.milestone && !locked && !skipped && (
+            <span className="text-primary font-medium">
+              {module.milestone.emoji} {module.milestone.label}
             </span>
-            {module.milestone && (
-              <span
-                className={cn(
-                  "flex items-center gap-1 font-medium",
-                  locked ? "text-secondary/60" : "text-primary",
-                )}
-              >
-                {module.milestone.emoji} {module.milestone.label}
-              </span>
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 
+  // Заблокированные — не кликабельны; пройденные/активные/пропущенные (для обзора) — открываются.
   if (locked) {
     return (
       <div ref={ref as never} className="block">
@@ -215,44 +239,18 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
 });
 export { CourseNode };
 
-function MilestoneNode({ milestone }: { milestone: { emoji: string; label: string } }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      className="flex items-center justify-center my-2"
-    >
-      <div className="flex items-center gap-2 bg-ink text-white rounded-full pl-2 pr-4 py-1.5 shadow-soft">
-        <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-sm">
-          {milestone.emoji}
-        </span>
-        <span className="text-xs font-semibold">{milestone.label}</span>
-        <Trophy className="w-3.5 h-3.5 text-warning" />
-      </div>
-    </motion.div>
-  );
-}
-
 function FinalNode() {
   return (
-    <Link href="/demo-day" className="flex items-center gap-4 group">
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        className="w-[68px] h-[68px] rounded-full bg-gradient-to-br from-primary to-primary-hover text-white flex items-center justify-center shrink-0 shadow-glow border-4 border-bg z-10"
-      >
-        <Trophy className="w-7 h-7" />
-      </motion.div>
-      <div className="flex-1 card border-2 border-primary p-4 bg-gradient-to-br from-primary-soft to-bg-surface">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="chip text-[10px] bg-primary text-white">
-            <Sparkles className="w-3 h-3" /> Финал
-          </span>
-        </div>
+    <Link href="/demo-day" className="flex items-start gap-3 group">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-hover text-white flex items-center justify-center shrink-0 shadow-glow">
+        <Trophy className="w-6 h-6" />
+      </div>
+      <div className="flex-1 rounded-2xl border-2 border-primary p-3.5 bg-gradient-to-br from-primary-soft to-bg-surface">
+        <span className="chip text-[10px] bg-primary text-white mb-1">
+          <Sparkles className="w-3 h-3" /> Финал
+        </span>
         <h3 className="font-semibold text-ink leading-tight">Demo Day</h3>
-        <p className="text-sm text-secondary mt-1">
-          Соберите метрики, сформируйте pitch и презентуйте проект
-        </p>
+        <p className="text-sm text-secondary mt-0.5">Соберите метрики, сформируйте pitch и презентуйте проект</p>
       </div>
     </Link>
   );

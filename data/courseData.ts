@@ -1,4 +1,4 @@
-import type { Module } from "@/types";
+import type { Module, Stage, Track } from "@/types";
 
 // ===== ОБЩАЯ ЧАСТЬ: блоки 1–8 =====
 export const COMMON_MODULES: Module[] = [
@@ -1117,6 +1117,75 @@ export function getModulesForTrack(
   if (!track || track === "common") return common;
   if (track === "tech") return [...common, ...TECH_MODULES];
   return [...common, ...REGULAR_MODULES];
+}
+
+// ===== 3 стадии курса =====
+// Курс разбит на 3 стадии. Стадия из онбординга задаёт, с какой стадии
+// человек стартует; предыдущие помечаются как «не требуется на вашей стадии».
+export type CourseStageIndex = 0 | 1 | 2;
+
+export interface CourseStageMeta {
+  index: CourseStageIndex;
+  onboardingStage: Stage;
+  title: string;
+  short: string;
+  subtitle: string;
+}
+
+export const COURSE_STAGES: CourseStageMeta[] = [
+  {
+    index: 0,
+    onboardingStage: "idea",
+    title: "Стадия 1 · Идея и проверка",
+    short: "Идея",
+    subtitle: "Идея, клиент, рынок и первый оффер",
+  },
+  {
+    index: 1,
+    onboardingStage: "mvp",
+    title: "Стадия 2 · Запуск и первые продажи",
+    short: "Запуск",
+    subtitle: "Первый платёж, экономика, право, продажи",
+  },
+  {
+    index: 2,
+    onboardingStage: "selling",
+    title: "Стадия 3 · Рост и масштаб",
+    short: "Рост",
+    subtitle: "Монетизация/финансы, удержание, масштабирование",
+  },
+];
+
+// К какой стадии относится блок.
+const MODULE_STAGE: Record<string, CourseStageIndex> = {
+  m1: 0, m2: 0, m3: 0, m4: 0,
+  m5: 1, m6: 1, m7: 1, m8: 1,
+  t9: 1, t10: 1, t11: 1,
+  r9: 1, r10: 1, r11: 1,
+  t12: 2, t13: 2, t14: 2,
+  r12: 2, r13: 2, r14: 2, r15: 2,
+};
+
+export function moduleStageIndex(id: string): CourseStageIndex {
+  return MODULE_STAGE[id] ?? 0;
+}
+
+// С какой стадии курса стартует пользователь по его онбординг-стадии.
+export function startStageIndexForStage(stage: Stage | null | undefined): CourseStageIndex {
+  if (stage === "selling") return 2;
+  if (stage === "mvp") return 1;
+  return 0;
+}
+
+export function courseStageMeta(index: CourseStageIndex): CourseStageMeta {
+  return COURSE_STAGES[index];
+}
+
+// Стартовый модуль трека по стадии — первый блок нужной стадии.
+export function startModuleForTrackStage(track: Track | null, stage: Stage | null): Module | undefined {
+  const ordered = getModulesForTrack(track);
+  const startStage = startStageIndexForStage(stage);
+  return ordered.find((m) => moduleStageIndex(m.id) >= startStage) ?? ordered[0];
 }
 
 export const TRACK_SELECT_MODULE: Module = {

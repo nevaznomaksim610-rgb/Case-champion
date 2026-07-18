@@ -20,6 +20,8 @@ import type {
   ModuleStatus,
   FinanceInput,
   PaymentAnswers,
+  Track,
+  Stage,
 } from "@/types";
 import {
   DEMO_PROFILE,
@@ -37,7 +39,12 @@ import {
   DEMO_STREAK_DAYS,
   DEMO_START_DATE,
 } from "@/data/demoData";
-import { ALL_MODULES } from "@/data/courseData";
+import {
+  ALL_MODULES,
+  getModulesForTrack,
+  moduleStageIndex,
+  startStageIndexForStage,
+} from "@/data/courseData";
 import { ACHIEVEMENT_DEFS } from "@/store/achievements";
 import { todayISO, uid } from "@/lib/utils";
 
@@ -59,6 +66,34 @@ function initialProgressMap(): Record<string, ModuleProgress> {
     if (idx === 0) p.status = "available";
     map[m.id] = p;
   });
+  return map;
+}
+
+// Прогресс с учётом онбординга: старт с выбранной стадии, блоки предыдущих
+// стадий помечаются «не требуется на вашей стадии», остальные — заблокированы.
+function buildInitialProgress(
+  track: Track | null,
+  stage: Stage | null,
+): Record<string, ModuleProgress> {
+  const map: Record<string, ModuleProgress> = {};
+  // По умолчанию всё закрыто (в т.ч. блоки другого трека).
+  ALL_MODULES.forEach((m) => {
+    map[m.id] = emptyModuleProgress();
+  });
+
+  const ordered = getModulesForTrack(track);
+  const startStage = startStageIndexForStage(stage);
+  let startIdx = ordered.findIndex((m) => moduleStageIndex(m.id) >= startStage);
+  if (startIdx < 0) startIdx = 0;
+
+  ordered.forEach((m, i) => {
+    const p = emptyModuleProgress();
+    if (i < startIdx) p.status = "skipped_not_applicable";
+    else if (i === startIdx) p.status = "available";
+    else p.status = "locked";
+    map[m.id] = p;
+  });
+
   return map;
 }
 
@@ -195,9 +230,10 @@ export const useAppStore = create<AppState>()(
       // поэтому здесь их не трогаем, но гарантируем, что в траектории
       // НИЧЕГО не пройдено — это новый пользователь.
       completeOnboarding: () =>
-        set({
+        set((s) => ({
           onboarded: true,
-          moduleProgress: initialProgressMap(),
+          // Траектория строится под выбранный трек и стадию из онбординга.
+          moduleProgress: buildInitialProgress(s.profile?.track ?? null, s.profile?.stage ?? null),
           metrics: { interviews: 0, visits: 0, leads: 0, payments: 0, revenue: 0, averageCheck: 0, cac: 0 },
           streakDays: 0,
           lastActionDate: null,
@@ -213,7 +249,7 @@ export const useAppStore = create<AppState>()(
           chat: [],
           financeInput: null,
           paymentAnswers: null,
-        }),
+        })),
 
       loadDemo: () => {
         set({

@@ -560,8 +560,8 @@ function SummaryStep({ data }: { data: Record<string, unknown> }) {
 
       <div className="space-y-3 mb-5">
         <SummaryRow label="Трек развития" value={trackName[track]} emoji={track === "tech" ? "💻" : "🛍️"} />
-        <SummaryRow label="Стартовый блок" value={rec.startModuleLabel} emoji="🚀" />
-        <SummaryRow label="Пройдено сейчас" value="0 из блоков — начинаем с нуля" emoji="🎯" />
+        <SummaryRow label="Стартовая стадия" value={rec.stageTitle} emoji="🎯" />
+        <SummaryRow label="Первый блок" value={rec.startModuleLabel} emoji="🚀" />
       </div>
 
       <p className="text-xs font-semibold uppercase tracking-wide text-secondary mb-2">Первые шаги</p>

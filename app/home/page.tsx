@@ -46,11 +46,15 @@ function HomeContent() {
   const track = profile?.track ?? null;
   const modules = useMemo(() => getModulesForTrack(track), [track]);
 
-  const completedCount = modules.filter((m) => {
+  // Блоки предыдущих стадий («не требуется») не входят в прогресс траектории.
+  const journeyModules = modules.filter(
+    (m) => moduleProgress[m.id]?.status !== "skipped_not_applicable",
+  );
+  const completedCount = journeyModules.filter((m) => {
     const s = moduleProgress[m.id]?.status;
     return s === "completed" || s === "credited_by_diagnostic";
   }).length;
-  const totalCount = modules.length;
+  const totalCount = journeyModules.length;
   const pct = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const activeModule =

@@ -34,8 +34,15 @@ import { getModuleById, ALL_MODULES } from "@/data/courseData";
 import { analyzeModule } from "@/lib/aiEngine";
 import { buildBusinessContext, lessonSystemPrompt } from "@/lib/ai";
 import { CoachSheet } from "@/components/ai/CoachSheet";
+import { personalizedPlaceholder } from "@/lib/personalization";
 import { cn } from "@/lib/utils";
-import type { FormFieldDef, AIInsight } from "@/types";
+import type { FormFieldDef, AIInsight, BusinessFormat } from "@/types";
+
+const STAGE_SHORT: Record<string, string> = {
+  idea: "Только идея",
+  mvp: "Первые попытки",
+  selling: "Уже продаю",
+};
 
 const STEPS = ["Урок", "Практика", "AI", "Результат"] as const;
 type Step = (typeof STEPS)[number];
@@ -176,6 +183,24 @@ function ModuleContent() {
         </button>
       </div>
 
+      {/* Персонализация: урок подстроен под выбор в онбординге */}
+      {profile && (profile.industry || profile.track || profile.stage) && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {profile.industry && (
+            <span className="chip bg-bg-muted text-ink text-[11px]">🏷️ {profile.industry}</span>
+          )}
+          {profile.track && (
+            <span className="chip bg-bg-muted text-ink text-[11px]">
+              {profile.track === "tech" ? "💻 Стартап" : "🛍️ Реальный бизнес"}
+            </span>
+          )}
+          {profile.stage && (
+            <span className="chip bg-bg-muted text-ink text-[11px]">📍 {STAGE_SHORT[profile.stage] ?? profile.stage}</span>
+          )}
+          <span className="chip bg-primary-soft text-primary text-[11px]">✨ Подстроено под вас</span>
+        </div>
+      )}
+
       {/* Постоянная подсказка: AI доступен на каждом уроке */}
       <button
         onClick={() => setCoachOpen(true)}
@@ -265,6 +290,7 @@ function ModuleContent() {
               module={mod}
               answers={answers}
               onChange={handleAnswerChange}
+              format={profile?.format ?? null}
             />
           )}
 
@@ -569,10 +595,12 @@ function PracticeStep({
   module,
   answers,
   onChange,
+  format,
 }: {
   module: NonNullable<ReturnType<typeof getModuleById>>;
   answers: Record<string, unknown>;
   onChange: (name: string, value: unknown) => void;
+  format: BusinessFormat | null;
 }) {
   // Special variant routing
   if (module.variant === "payments_wizard") {
@@ -675,6 +703,7 @@ function PracticeStep({
               field={field}
               value={answers[field.name]}
               onChange={(v) => onChange(field.name, v)}
+              format={format}
             />
           ))}
         </div>
@@ -691,18 +720,21 @@ function FieldRenderer({
   field,
   value,
   onChange,
+  format,
 }: {
   field: FormFieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
+  format: BusinessFormat | null;
 }) {
   const fullWidth = field.type === "textarea" || field.type === "multiselect";
+  const ph = personalizedPlaceholder(field.name, field.placeholder, format);
   return (
     <div className={fullWidth ? "sm:col-span-2" : ""}>
       <Label required={field.required}>{field.label}</Label>
       {field.type === "text" && (
         <Input
-          placeholder={field.placeholder}
+          placeholder={ph}
           value={(value as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
           unit={field.unit}
@@ -712,7 +744,7 @@ function FieldRenderer({
         <Input
           type="number"
           inputMode="numeric"
-          placeholder={field.placeholder}
+          placeholder={ph}
           value={(value as string | number) ?? ""}
           onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
           unit={field.unit}
@@ -720,7 +752,7 @@ function FieldRenderer({
       )}
       {field.type === "textarea" && (
         <Textarea
-          placeholder={field.placeholder}
+          placeholder={ph}
           value={(value as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
