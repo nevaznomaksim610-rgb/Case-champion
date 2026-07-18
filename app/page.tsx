@@ -138,7 +138,7 @@ export default function LandingPage() {
         <div className="relative overflow-hidden rounded-4xl bg-ink text-white p-8 sm:p-12">
           <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-primary/30 blur-3xl" />
           <div className="relative">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight max-w-xl">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight max-w-xl text-white">
               Не лендинг. Не курс. <span className="text-primary">Рабочий продукт.</span>
             </h2>
             <p className="text-white/70 mt-4 max-w-lg">

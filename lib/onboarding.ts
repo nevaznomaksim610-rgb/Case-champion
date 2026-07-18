@@ -1,7 +1,8 @@
 import type { BusinessFormat, Goal30, Stage, Track } from "@/types";
-import { COMMON_MODULES } from "@/data/courseData";
+import { COMMON_MODULES, getModulesForTrack } from "@/data/courseData";
 
 interface AnalyzeInput {
+  track: Track;
   stage: Stage | null;
   format: BusinessFormat | null;
   goal: Goal30 | null;
@@ -15,70 +16,52 @@ export interface OnboardingRecommendation {
   startModuleId: string;
   startModuleLabel: string;
   aiText: string;
-  useDiagnostic: boolean;
-  skippedByDiagnostic: string[];
+  firstSteps: { number: string; title: string }[];
 }
 
+// Трек выбирает сам пользователь на вопросе «стартап или реальный бизнес».
+// Мы НЕ зачитываем блоки «диагностикой» — новый пользователь начинает
+// траекторию с самого начала, ничего не пройдено.
 export function analyzeOnboarding(input: AnalyzeInput): OnboardingRecommendation {
-  const { stage, format, goal, budget, hours } = input;
+  const { track, stage, format, goal, budget, hours } = input;
 
-  // Выбор трека
-  let track: Track = "regular";
-  if (format === "tech") track = "tech";
-  if (goal === "scale" && format === "tech") track = "tech";
-  if (goal === "first_payment" && (format === "horeca" || format === "retail" || format === "beauty" || format === "production")) {
-    track = "regular";
-  }
+  // Всегда стартуем с первого блока траектории — ничего не пропускаем.
+  const modules = getModulesForTrack(track);
+  const first = modules[0];
+  const startModuleId = first?.id ?? "m1";
+  const startModuleLabel = first?.title ?? "Выбор бизнес-идеи";
 
-  // Стартовый блок
-  let startModuleId = "m1";
-  let startModuleLabel = "Выбор бизнес-идеи";
+  const firstSteps = modules.slice(0, 4).map((m) => ({ number: m.number, title: m.title }));
 
-  if (stage === "selling") {
-    startModuleId = "m5";
-    startModuleLabel = "Проверка спроса реальным платежом";
-  } else if (stage === "mvp") {
-    startModuleId = "m4";
-    startModuleLabel = "Продукт, оффер и цена";
-  }
-
-  // Диагностика: для MVP/продаж зачитываем часть блоков как «зачтено диагностикой»
-  const useDiagnostic = stage === "mvp" || stage === "selling";
-  const skippedByDiagnostic: string[] = [];
-  if (stage === "selling") {
-    skippedByDiagnostic.push("m1", "m2", "m3");
-  } else if (stage === "mvp") {
-    skippedByDiagnostic.push("m1");
-  }
-
-  // AI-текст
-  const budgetText = budget > 0 ? `бюджет ${budget.toLocaleString("ru-RU")} ₽` : "бюджет не указан";
+  const budgetText = budget > 0 ? `бюджет ${budget.toLocaleString("ru-RU")} ₽` : "бюджет пока не указан";
   const hoursText = hours > 0 ? `${hours} ч/неделю` : "гибкий график";
 
-  let aiText = `По вашим ответам оптимальный трек — ${track === "tech" ? "«Технологический стартап»" : "«Обычный бизнес»"}. `;
-  if (stage === "idea") {
-    aiText += `Вы на старте, ${budgetText}, ${hoursText}. Начнём с фундамента: идея → проблема → оффер. `;
-  } else if (stage === "mvp") {
-    aiText += `MVP уже есть — нет смысла заново проходить «Идею». Перейдём сразу к офферу и проверке спроса. `;
-  } else {
-    aiText += `Вы уже продаёте — фокус на экономике, удержании и масштабировании. Базовые блоки зачтены диагностикой. `;
-  }
-  aiText += `Стартовый блок: «${startModuleLabel}». Следующий шаг — открыть его и заполнить практику.`;
+  const trackText =
+    track === "tech"
+      ? "«Технологический стартап» — ищем масштабируемую модель через гипотезы, MVP и монетизацию"
+      : "«Реальный бизнес» — выстраиваем повторяемые продажи понятного продукта или услуги";
+
+  const stageText =
+    stage === "idea"
+      ? "Вы в самом начале — соберём фундамент от идеи до первого платежа."
+      : stage === "mvp"
+        ? "У вас уже есть первые попытки — доведём продукт до устойчивого спроса."
+        : stage === "selling"
+          ? "Вы уже продаёте — усилим экономику, удержание и рост, но пройдём базу целиком, чтобы ничего не упустить."
+          : "Идём по шагам от идеи до первого платежа.";
+
+  const aiText =
+    `Ваша траектория — ${trackText}. ${stageText} ` +
+    `Учитываю ваши вводные: ${budgetText}, ${hoursText}. ` +
+    `Начнём с блока «${startModuleLabel}». Ничего пройденного пока нет — это ваш старт.`;
 
   return {
     track,
     startModuleId,
     startModuleLabel,
     aiText,
-    useDiagnostic,
-    skippedByDiagnostic,
+    firstSteps,
   };
-}
-
-export function getStartModuleLabel(stage: Stage | null): string {
-  if (stage === "selling") return "Проверка спроса реальным платежом";
-  if (stage === "mvp") return "Продукт, оффер и цена";
-  return "Выбор бизнес-идеи";
 }
 
 export function modulesCount(): number {

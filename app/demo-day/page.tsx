@@ -115,7 +115,7 @@ function DemoDayContent() {
           <span className="chip bg-primary text-white text-xs">
             <Trophy className="w-3.5 h-3.5" /> Demo Day
           </span>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-4">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mt-4 text-white">
             {project?.name ?? "Ваш проект"}
           </h1>
           <p className="text-sm text-white/70 mt-2 max-w-lg">

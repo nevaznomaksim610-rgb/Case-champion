@@ -98,7 +98,7 @@ function AIContent() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-148px)] lg:h-[calc(100dvh-120px)]">
+    <div className="flex flex-col h-[calc(100dvh-124px)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

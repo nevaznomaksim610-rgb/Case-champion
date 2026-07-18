@@ -276,7 +276,7 @@ function ModuleContent() {
       </AnimatePresence>
 
       {/* Footer navigation */}
-      <div className="sticky bottom-[84px] lg:bottom-4 mt-6 z-20">
+      <div className="sticky bottom-4 mt-6 z-20">
         <div className="card p-3 flex items-center justify-between gap-3 shadow-soft">
           <Button
             variant="secondary"

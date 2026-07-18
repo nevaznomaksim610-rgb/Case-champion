@@ -190,7 +190,30 @@ export const useAppStore = create<AppState>()(
 
       setMetrics: (m) => set((s) => ({ metrics: { ...s.metrics, ...m } })),
 
-      completeOnboarding: () => set({ onboarded: true }),
+      // Завершение онбординга = старт «с чистого листа».
+      // profile/project уже установлены отдельными вызовами до этого,
+      // поэтому здесь их не трогаем, но гарантируем, что в траектории
+      // НИЧЕГО не пройдено — это новый пользователь.
+      completeOnboarding: () =>
+        set({
+          onboarded: true,
+          moduleProgress: initialProgressMap(),
+          metrics: { interviews: 0, visits: 0, leads: 0, payments: 0, revenue: 0, averageCheck: 0, cac: 0 },
+          streakDays: 0,
+          lastActionDate: null,
+          startDate: todayISO(),
+          competitors: [],
+          interviews: [],
+          clients: [],
+          assortment: [],
+          team: [],
+          experiments: [],
+          payments: [],
+          achievements: ACHIEVEMENT_DEFS.map((a) => ({ ...a, unlocked: false, unlockedAt: null })),
+          chat: [],
+          financeInput: null,
+          paymentAnswers: null,
+        }),
 
       loadDemo: () => {
         set({

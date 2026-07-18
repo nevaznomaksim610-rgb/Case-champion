@@ -99,7 +99,7 @@ function ProfileContent() {
               {profile?.name?.[0]?.toUpperCase() ?? "Г"}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight truncate">
+              <h1 className="text-2xl font-bold tracking-tight truncate text-white">
                 {profile?.name ?? "Гость"}
               </h1>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">

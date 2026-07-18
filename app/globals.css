@@ -28,14 +28,20 @@ body {
   font-feature-settings: "ss01", "cv01";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Запрещаем зум и «дёрганье» вьюпорта — приложение открывается как единая вкладка */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
 }
 
 html {
   scroll-behavior: smooth;
+  touch-action: manipulation;
 }
 
 body {
   min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 @layer base {
