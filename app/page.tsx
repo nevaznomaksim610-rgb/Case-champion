@@ -69,13 +69,10 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   fullWidth
-                  onClick={() => {
-                    if (mounted && onboarded) router.push("/home");
-                    else router.push("/onboarding");
-                  }}
+                  onClick={() => router.push("/onboarding")}
                   className="sm:w-auto"
                 >
-                  {mounted && onboarded ? "Продолжить путь" : "Начать"}
+                  Начать
                   <ArrowRight className="w-5 h-5" />
                 </Button>
                 <Button
@@ -96,6 +93,20 @@ export default function LandingPage() {
               <p className="text-xs text-secondary mt-4">
                 Демо открывается без регистрации. Прогресс сохраняется на устройстве.
               </p>
+
+              {/* Отдельная кнопка «Продолжить» — только для тех, кто уже прошёл онбординг */}
+              {mounted && onboarded && (
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => router.push("/home")}
+                  className="mt-4 sm:w-auto"
+                >
+                  Продолжить путь
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              )}
             </motion.div>
 
             {/* Phone mockup */}
