@@ -61,13 +61,26 @@ export function CourseMap({ modules, progress }: CourseMapProps) {
               isCurrent={isCurrent}
             />
 
-            {/* Узлы стадии с пунктирной линией-таймлайном */}
+            {/* Узлы стадии с зигзаг-пунктирной линией-таймлайном */}
             <div className="relative mt-4">
               {stageModules.length > 1 && (
-                <span
+                <svg
                   aria-hidden
-                  className="absolute left-[27px] top-8 bottom-8 border-l-2 border-dashed border-bg-muted"
-                />
+                  className="absolute left-[15px] top-8 bottom-8 w-6 pointer-events-none"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 24 100"
+                  fill="none"
+                >
+                  <path
+                    d="M4 0 L20 10 L4 20 L20 30 L4 40 L20 50 L4 60 L20 70 L4 80 L20 90 L4 100"
+                    stroke="#C7C7CE"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="14 9"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
               )}
               <div className="space-y-4">
                 {stageModules.map((module) => {
