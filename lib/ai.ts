@@ -129,8 +129,31 @@ export function lessonSystemPrompt(
   return `${PERSONA}\n\n=== ДАННЫЕ БИЗНЕСА ПОЛЬЗОВАТЕЛЯ ===\n${businessContext || "Пока не заполнено."}\n\n=== ТЕКУЩИЙ УРОК ===\n${lessonBlock}`;
 }
 
+// Клиентский дневной лимит (мгновенная обратная связь + меньше лишних запросов).
+// Серверный лимит по IP — основной, его нельзя обойти очисткой localStorage.
+const AI_DAILY_LIMIT = 67;
+
+function withinClientDailyLimit(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const key = "alfa-ai-usage";
+    const day = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+    const raw = window.localStorage.getItem(key);
+    const rec = raw ? (JSON.parse(raw) as { day: string; count: number }) : null;
+    const count = rec && rec.day === day ? rec.count : 0;
+    if (count >= AI_DAILY_LIMIT) return false;
+    window.localStorage.setItem(key, JSON.stringify({ day, count: count + 1 }));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 // Запрос к серверному маршруту (ключ живёт только на сервере).
 export async function askAi(messages: ChatTurn[], system: string): Promise<string> {
+  if (!withinClientDailyLimit()) {
+    return "На сегодня лимит исчерпан: 67 сообщений в день. Возвращайтесь завтра, я буду на связи 🦁";
+  }
   try {
     const res = await fetch("/api/ai/chat", {
       method: "POST",
