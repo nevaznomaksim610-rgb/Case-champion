@@ -38,7 +38,7 @@ export function CourseMap({ modules, progress }: CourseMapProps) {
   const activeStage = activeId !== undefined ? moduleStageIndex(activeId) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {COURSE_STAGES.map((stage) => {
         const stageModules = modules.filter((m) => moduleStageIndex(m.id) === stage.index);
         if (stageModules.length === 0) return null;
@@ -61,12 +61,12 @@ export function CourseMap({ modules, progress }: CourseMapProps) {
               isCurrent={isCurrent}
             />
 
-            {/* Узлы стадии с зигзаг-пунктирной линией-таймлайном */}
-            <div className="relative mt-4">
+            {/* Узлы стадии с волнистой пунктирной линией-таймлайном */}
+            <div className="relative mt-2">
               {stageModules.length > 1 && (
                 <span
                   aria-hidden
-                  className="absolute left-4 top-7 bottom-7 w-6 pointer-events-none"
+                  className="absolute left-4 top-7 bottom-2 w-6 pointer-events-none"
                   style={{
                     backgroundImage:
                       "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='48'%3E%3Cpath d='M12 0 C20 7 20 17 12 24 C4 31 4 41 12 48' fill='none' stroke='%23B4B4BE' stroke-width='3' stroke-linecap='round' stroke-dasharray='9 8'/%3E%3C/svg%3E\")",
@@ -191,7 +191,6 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
         className={cn(
           "relative w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-card border-4 border-bg-surface z-10 font-bold",
           nodeBg,
-          skipped && "opacity-70",
         )}
       >
         {locked ? (
@@ -213,7 +212,6 @@ const CourseNode = forwardRef<HTMLAnchorElement, CourseNodeProps>(function Cours
         className={cn(
           "flex-1 min-w-0 rounded-2xl border-2 p-4 transition-all",
           cardBg,
-          (locked || skipped) && "opacity-75",
         )}
       >
         <div className="flex items-center gap-2 mb-1 flex-wrap">
