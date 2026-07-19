@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/Button";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { Input, Label, Select, Textarea } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
 import type { BusinessFormat, Goal30, Stage, Track } from "@/types";
@@ -700,15 +701,13 @@ function SummaryStep({ data }: { data: Record<string, unknown> }) {
 
   return (
     <div>
-      <div className="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-4">
-        <Sparkles className="w-6 h-6" />
-      </div>
+      <AiAvatar size={48} rounded="2xl" className="mb-4" />
       <h1 className="text-2xl font-bold text-ink leading-tight">Ваша траектория готова</h1>
       <p className="text-secondary mt-1.5 mb-6">AI-кофаундер собрал персональный маршрут</p>
 
       <div className="card p-5 mb-4 bg-gradient-to-br from-primary-soft to-bg-surface">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-primary" />
+          <AiAvatar size={20} />
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">Рекомендация AI</p>
         </div>
         <p className="font-medium text-ink leading-relaxed">{rec.aiText}</p>

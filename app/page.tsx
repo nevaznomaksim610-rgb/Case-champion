@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play, Sparkles, TrendingUp, Wallet, Target } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/Button";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LandingPage() {
 
   const features = [
     { icon: Target, title: "От идеи к платежу", text: "Не учитесь ради сертификата — доводим до реальных оплат" },
-    { icon: Sparkles, title: "AI-кофаундер", text: "Локальный ИИ анализирует ваши данные и предлагает шаги" },
+    { icon: Sparkles, title: "AI-кофаундер", text: "Знает ваш проект из онбординга и презентации — отвечает на любые вопросы" },
     { icon: TrendingUp, title: "Реальная экономика", text: "Считаем CAC, LTV, точку безубыточности — с графиками" },
     { icon: Wallet, title: "Свои платежи", text: "Подбираем комплект платежей Альфа-Банка под ваш сценарий" },
   ];
@@ -134,9 +135,13 @@ export default function LandingPage() {
               transition={{ duration: 0.4, delay: i * 0.05 }}
               className="card p-5"
             >
-              <div className="w-11 h-11 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-4">
-                <f.icon className="w-5 h-5" />
-              </div>
+              {f.title === "AI-кофаундер" ? (
+                <AiAvatar size={44} rounded="2xl" className="mb-4" />
+              ) : (
+                <div className="w-11 h-11 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-4">
+                  <f.icon className="w-5 h-5" />
+                </div>
+              )}
               <h3 className="font-semibold text-ink mb-1">{f.title}</h3>
               <p className="text-sm text-secondary leading-relaxed">{f.text}</p>
             </motion.div>

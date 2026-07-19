@@ -20,6 +20,7 @@ import {
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/shell/AppShell";
 import { CourseMap } from "@/components/course/CourseMap";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -144,9 +145,7 @@ function AiPromoCard() {
     <div className="relative overflow-hidden rounded-3xl bg-ink text-white p-5">
       <div className="absolute -top-16 -right-10 w-44 h-44 rounded-full bg-primary/30 blur-2xl" />
       <div className="relative">
-        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center mb-3">
-          <Sparkles className="w-5 h-5" />
-        </div>
+        <AiAvatar size={44} rounded="2xl" className="mb-3 ring-2 ring-white/15" />
         <p className="font-semibold text-white">AI-кофаундер</p>
         <p className="text-sm text-white/70 mt-1">
           Знает всё о вашем бизнесе из онбординга и ответит на любой вопрос — по идее, офферу, экономике и платежам.

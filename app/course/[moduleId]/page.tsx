@@ -34,6 +34,7 @@ import { getModuleById, ALL_MODULES } from "@/data/courseData";
 import { analyzeModule } from "@/lib/aiEngine";
 import { buildBusinessContext, lessonSystemPrompt } from "@/lib/ai";
 import { CoachSheet } from "@/components/ai/CoachSheet";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { personalizedPlaceholder } from "@/lib/personalization";
 import { cn } from "@/lib/utils";
 import type { FormFieldDef, AIInsight, BusinessFormat } from "@/types";
@@ -179,9 +180,9 @@ function ModuleContent() {
         <button
           onClick={() => setCoachOpen(true)}
           aria-label="Спросить AI по уроку"
-          className="w-10 h-10 rounded-full bg-primary-soft text-primary hover:bg-primary hover:text-white flex items-center justify-center shrink-0 transition-colors"
+          className="rounded-full shrink-0 ring-2 ring-primary/15 hover:ring-primary/40 transition-all"
         >
-          <Sparkles className="w-5 h-5" />
+          <AiAvatar size={40} />
         </button>
       </div>
 
@@ -208,9 +209,7 @@ function ModuleContent() {
         onClick={() => setCoachOpen(true)}
         className="w-full mb-5 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary-soft/50 px-4 py-3 text-left hover:bg-primary-soft transition-colors"
       >
-        <span className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4" />
-        </span>
+        <AiAvatar size={40} rounded="xl" />
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-ink leading-tight">Спросить AI-кофаундера</span>
           <span className="block text-xs text-secondary truncate">Объяснит урок и подскажет под ваш бизнес</span>

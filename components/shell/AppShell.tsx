@@ -3,9 +3,10 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { cn } from "@/lib/utils";
 
 // Заголовки для «внутренних» экранов (drill-down в рамках одной вкладки).
@@ -71,9 +72,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <button
                     aria-label="AI-кофаундер"
                     onClick={() => router.push("/ai")}
-                    className="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0 hover:bg-primary hover:text-white transition-colors"
+                    className="rounded-full shrink-0 ring-2 ring-primary/15 hover:ring-primary/40 transition-all"
                   >
-                    <Sparkles className="w-5 h-5" />
+                    <AiAvatar size={40} />
                   </button>
                 </>
               ) : (

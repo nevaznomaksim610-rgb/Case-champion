@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Trash2, Copy, Check, FileText, Database } from "lucide-react";
+import { Send, Trash2, Copy, Check, FileText, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppShell } from "@/components/shell/AppShell";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -115,9 +116,7 @@ function AIContent() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center shadow-glow">
-            <Sparkles className="w-5 h-5" />
-          </div>
+          <AiAvatar size={44} rounded="2xl" className="shadow-glow" />
           <div>
             <h1 className="text-xl font-bold text-ink leading-tight">Альфа AI-кофаундер</h1>
             <p className="text-xs text-secondary flex items-center gap-1.5">
@@ -175,9 +174,7 @@ function AIContent() {
               >
                 {msg.role === "assistant" && (
                   <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center">
-                      <Sparkles className="w-3 h-3" />
-                    </div>
+                    <AiAvatar size={24} />
                     <span className="text-xs font-semibold text-secondary">AI-кофаундер</span>
                   </div>
                 )}

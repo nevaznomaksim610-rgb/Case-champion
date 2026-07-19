@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles } from "lucide-react";
+import { Send } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { AiAvatar } from "@/components/ai/AiAvatar";
 import { askAi, type ChatTurn } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +74,7 @@ export function CoachSheet({
               >
                 {m.role === "assistant" && (
                   <div className="flex items-center gap-1.5 mb-1.5 text-primary">
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <AiAvatar size={18} />
                     <span className="text-xs font-semibold">AI-кофаундер</span>
                   </div>
                 )}
